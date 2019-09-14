@@ -1,6 +1,9 @@
 Aayush Notes --
 db.sql, app.py, eval.py copied from my lipoker project as an example of a minimal flask backend.
 
+frontend - do npm install then npm start
+
+---
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
