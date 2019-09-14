@@ -10,7 +10,7 @@ class Header extends React.Component  {
         return(
             <Fragment>
                 <RedHeader/>
-                <Text> Singerator </Text>
+                <Text> Bruh WHy Cant You Hit the Damn Notes </Text>
                 <NewGameButton> Start </NewGameButton>
                 <CopyLinkButton> New Song </CopyLinkButton>
             </Fragment>
@@ -58,7 +58,7 @@ export const Text = styled.span`
     font-weight: bold;
 
     position: absolute;
-    width: 10%;
+    width: 25%;
     top: 30%;
     left: 2%;
     text-align: center;

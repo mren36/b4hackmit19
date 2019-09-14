@@ -10,8 +10,8 @@ class Footer extends React.Component  {
         return(
             <Fragment>
                 <RedFooter/>
-                <NewGameButton> Enter Song </NewGameButton>
-                <CopyLinkButton> Go </CopyLinkButton>
+                <SongTextField defaultValue="https://www.youtube.com/watch?v=XMqEFuGA2cE" />
+                <GetLinkButton> Go </GetLinkButton>
             </Fragment>
         );
     }
@@ -39,16 +39,13 @@ const Button = styled.button`
     top: 15%;
 
     background: #D02000;
-    border-radius: 10px;
+    border-radius: 0px 10px 10px 0px;
 `;
 
-const CopyLinkButton = styled(Button)`
-    left: 51%;
+const GetLinkButton = styled(Button)`
+    left: 60%;
 `;
 
-const NewGameButton = styled(Button)`
-    left: 39%;
-`;
 
 export const Text = styled.span`
     font-size: 0.9em;
@@ -66,4 +63,24 @@ export const Text = styled.span`
     background: #D02000;
     border-radius: 10px;
 `
+
+const SongTextField = styled.input`
+    position: absolute;
+    font-family: Rambla;
+    right: 50%;
+    font-size: 0.9em;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
+    width: 40%;
+    left: 20%;
+    height: 70%;
+    top: 15%;
+    placeholder: "Youtube URL";
+
+    border: 1px solid black;
+    box-sizing: border-box;
+    border-radius: 10px 0px 0px 10px;
+`;
+
 export default Footer;
