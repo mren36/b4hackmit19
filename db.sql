@@ -1,0 +1,15 @@
+CREATE DATABASE poker;
+USE poker;
+CREATE TABLE game(
+name VARCHAR(100) NOT NULL,
+    create_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(name)
+);
+CREATE TABLE player(
+uid INT AUTO_INCREMENT,
+   gname VARCHAR(100) NOT NULL,
+   profit INT DEFAULT 0,
+   hands INT DEFAULT 0,
+   name VARCHAR(100) NOT NULL,
+   PRIMARY KEY(uid)
+);
