@@ -69,7 +69,6 @@ const SongTextField = styled.input`
     font-family: Rambla;
     right: 50%;
     font-size: 0.9em;
-    font-weight: bold;
     text-align: center;
     vertical-align: middle;
     width: 40%;

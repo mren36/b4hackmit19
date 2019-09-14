@@ -6,86 +6,160 @@ import sys
 import os
 from eval import *
 
+BLINDS = (5, 2)
+DEFAULT_STACK = 500
+
+
+# The condiut between the backend and a Mysql database
+class DB():
+    def __init__(config_name='init.ini'):
+        config = configparser.ConfigParser()
+        config.read(config_name)
+        self.conn = pymysql.connect(**config['db'])
+
+    def _eb(mod, dic):
+        # Build statement of the form a = b, d = e, ...
+        return mod.join(['%s = %s' % (k, v) for k, v in update_args.items()])
+    def _update(table, select_args, update_args):
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPDATE %s SET %s WHERE %s" % (table,
+                _eb(',', update_args), _eb(' and ', select_args)))
+    def _select(table, select_args):
+        with self.conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM %s WHERE %s" % (table, _eb(' and ', select_args)))
+            return cursor
+    def _insert(table, select_args):
+        with self.conn.cursor() as cursor:
+            keys, vals = zip(*select_args.items())
+            cursor.execute("INSERT INTO %s (%s) VALUES (%s)" % (table, ','.join(keys), ','.join(vals)))
+
+    def _get_user(gname, uname):
+        return _select('user', {'gname': gname, 'name': uname})
+
+    def get_user(gname, uname):
+        cur = _get_user(gname, uname)
+        if cur.rowcount == 0:
+            return None
+        return cur.fetchone()
+    def add_user(gname, uname):
+        if _get_user(gname, uname).rowcount == 0:
+            _insert('user', {'gname': gname, 'name': uname})
+    def update_user(gname, uname, params):
+        _update('user', {'gname': gname, 'name': uname}, params)
+    def create_game(name):
+        _insert('game', {'name': name})
+    def exists_game(name):
+        return _select('game', {'name': name}).rowcount != 0
+
+
+# Maintains a game's state. Executes poker logic. Syncs game state with database
+def Game():
+    self __init__(gname, db):
+        self.names = []
+        #self.positions = {}
+        self.db = db
+        self.gname = gname
+        self.ps = None
+    def _get_current_position(self):
+        self.ps.get_state()
+
+    def _new_game(self, stacks, current_position):
+        self.ps = Poker(stacks, self.names[current_position], BLINDS)
+        
+    def _export_to_db(self):
+
+    def add_user(self, uname):
+        self.names.append(uname)
+        if len(self.stacks) >= 2 and self.ps is None:
+            self._new_game([DEFAULT_STACK, DEFAULT_STACK])
+        else:
+            self._new_game(self.ps.get_state()[0]+[DEFAULT_STACK])
+
+    def try_action(self, uname, atype):
+        try:
+            self.ps.step(atype) # TODO
+        except Exception as e:
+            print(e)
+            return False
+        if ps.get_state()[5] in (FOLDED, SHOWDOWN):
+            self._new_game(self.ps.get_state()[0])
+
+    def stand_up(self, uname):
+        self.names.remove(uname)
+        #upos = next(k for k, v in self.positions.iteritems() where v == uname)
+        #del self.positions[upos]
+
+    def get_state(self):
+        return self.ps.get_state()
+
+
+
 app = Flask(__name__)
 CORS(app)
 
-started = False
-players = []
-laststate = None
-ps = None
-showdown = {}
-
-STARTINGSTACK = 500
-BLINDS = (5, 2)
-
-def newgame():
-    global laststate, ps, players, showdown
-    showdown = {} if laststate is None or laststate[5] != SHOWDOWN else laststate[1:3]
-    players.reverse()
-    plnew = {p:STARTINGSTACK for p in players} if laststate is None else laststate[0]
-    ps = Poker(plnew, players[0], BLINDS)
-    laststate = ps.get_state()
+db = DB()
+games = {}
 
 # ======== Routing =========================================================== #
 # -------- Logn ------------------------------------------------------------- #
-@app.route('/api/start', methods=['GET'])
-def start():
-    global started
-    name = request.args.get("name")
-    if name not in players:
-        if len(players) >= 2:
-            return jsonify({'full': True, 'info': players})
-        players.append(name)
-    print(started)
-    if len(players) == 2:
-        if not started:
-            newgame()
-        started = True
-        return jsonify({'ready': True})
-    return jsonify({'ready': False})
+@app.route('/api/create_game', methods=['GET'])
+def create_game():
+    gname = request.args.get("game")
+    if db.exists_game(gname):
+        return "Game already exists", 409
+    db.create_game(gname)
+    return "Done"
+
+@app.route('/api/join_game', methods=['GET'])
+def join_game():
+    gname = request.args.get("gname")
+    uname = request.args.get("uname")
+    if not db.exists_game(gname):
+        return "Game not found in db", 404
+
+    db.add_user(gname, uname)
+    if gname not in games:
+        games[gname] = Game(gname, db)
+
+    games[gname].add_user(uname)
+
+    return "Done"
 
 @app.route("/api/state", methods=['GET'])
 def state():
-    if started == False:
-        return jsonify({'start': False})
-    new_state = list(laststate)
-    new_state[1] = laststate[1][request.args.get("name")]
-    new_state.append(showdown)
-    new_state = tuple(new_state)
-    return jsonify(new_state)
+    gname = request.args.get("gname")
+    if gname not in games:
+        return "No one in game", 404
+    return jsonify(games[gname].get_state())
+
+@app.route("/api/leaderboard", methods=['GET'])
+def leaderboard():
+    gname = request.args.get("gname")
+    if gname not in games:
+        return "No one in game", 404
+    return jsonify(games[gname].get_leaderboard())
 
 @app.route("/api/action", methods=['GET'])
 def action():
-    global laststate, ps
-    if laststate is None:
-        return jsonify({'success': False}) 
-    # Perform action
+    gname = request.args.get("gname")
+    uname = request.args.get("uname")
     ast = request.args.get("action")
+
     atype = ast.upper() if ":" not in ast else (ast.split(":")[0].upper(), int(ast.split(":")[1]))
 
-    if laststate[4] != request.args.get("name"):
-        return jsonify({'success': False})
+    if gname not in games:
+        return "No one in game", 404
+    success = games[gname].try_action(uname, atype)
+    return "Done"
 
-    try:
-        ps.step(atype) # TODO
-    except Exception as e:
-        print(e)
-        return jsonify({'success': False})
-    laststate = ps.get_state()
-    print(laststate)
-    if laststate[5] in (FOLDED, SHOWDOWN):
-        print('DONE')
-        newgame()
-    return jsonify({'success': True})
-
-
-@app.route("/api/logout", methods=['GET'])
-def logout():
-    started = False
-    players = []
-    laststate = None
-
-    return jsonify({})
+@app.route("/api/stand_up", methods=['GET'])
+def stand_up():
+    gname = request.args.get("gname")
+    uname = request.args.get("uname")
+    if gname not in games:
+        return "No one in game", 404
+    games[gname].stand_up(uname)
+    return "Done"
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path>')
