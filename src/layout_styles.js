@@ -22,5 +22,12 @@ export const layoutStyles = {
       right: "0%",
       top: "93%",
       bottom: "0%"
+    },
+    notesArea: {
+      position: "absolute",
+      left: "0%",
+      right: "0%",
+      top: "7%",
+      bottom: "7%"
     }
 };

@@ -3,6 +3,7 @@ import React, { Component, Fragment } from "react";
 import './App.css';
 import Header from './MainHeader';
 import Footer from './MainFooter';
+import Notes from './MusicArea';
 import { layoutStyles } from './layout_styles.js';
 
 class App extends Component {
@@ -74,6 +75,9 @@ class App extends Component {
       <Fragment>
         <div style={layoutStyles.header}>
           <Header/>
+        </div>
+        <div style={layoutStyles.notesArea}>
+          <Notes/>
         </div>
         <div style={layoutStyles.footer}>
           <Footer/>
